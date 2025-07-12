@@ -1,6 +1,7 @@
 package pro.sky.telegrambot.listener;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import com.pengrad.telegrambot.TelegramBot;
@@ -18,30 +19,23 @@ import java.util.List;
 import static org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute;
 
 @Service
-public class TelegramBotUpdatesListener extends TelegramLongPollingBot {
+public class TelegramBotUpdatesListener implements UpdatesListener {
 
     private Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
+
+
+    private TelegramLongPollingBot bot;
+
+    public TelegramBotUpdatesListener(TelegramLongPollingBot bot){
+        this.bot = bot;
+    }
 
     @Autowired
     private TelegramBot telegramBot;
 
-    @Override
-    public String getBotUsername() {
-        return "KeithDS_bot";
-    }
-
-    @Override
-    public String getBotToken() {
-        return "7777386011:AAFWAxwN4EyLTbu6hAeZoQeGDJWo5XgKaEY";
-    }
-
     @PostConstruct
     public void init() {
         telegramBot.setUpdatesListener((UpdatesListener) this);
-    }
-
-    public void execute (SendMessage message) throws TelegramApiException {
-        super.execute(message);
     }
 
 
@@ -50,13 +44,13 @@ public class TelegramBotUpdatesListener extends TelegramLongPollingBot {
         for (Update update : updates) {
             if (update.hasMessage() && update.getMessage().hasText()){
                 String messageText = update.getMessage().getText();
-                if (messageText.equals("/start")){
+                if ("/start".equals(messageText)){
                     long chatId = update.getMessage().getChatId();
                     String welcomeMessage = " Привет! Рад видеть тебя тут. Как я могу помочь? ";
-                    SendMessage message = new SendMessage(1, " Привет! Рад видеть тебя тут. Как я могу помочь? ");
+                    SendMessage message = new SendMessage().setChatId(chatId).setText(welcomeMessage);
 
                     try {
-                        execute(message);
+                        bot.execute(message);
                     }catch (TelegramApiException e){
                         e.printStackTrace();
                     }
@@ -65,11 +59,12 @@ public class TelegramBotUpdatesListener extends TelegramLongPollingBot {
                 }
             }
         }
-        return updates.size();
+        return UpdatesListener.CONFIRMED_UPDATES_ALL;
     }
 
-    @Override
-    public void onUpdateReceived(Update update) {
 
+    @Override
+    public int process(List<com.pengrad.telegrambot.model.Update> list) {
+        return 0;
     }
 }
