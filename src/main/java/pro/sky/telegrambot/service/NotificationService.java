@@ -1,5 +1,7 @@
 package pro.sky.telegrambot.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import pro.sky.telegrambot.model.NotificationTask;
 import pro.sky.telegrambot.repository.NotificationTaskRepository;
 
@@ -8,8 +10,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
+@Service
 public class NotificationService {
 
+    @Autowired
     private final NotificationTaskRepository notificationTaskRepository;
 
     public NotificationService(NotificationTaskRepository notificationTaskRepository){

@@ -2,7 +2,6 @@ package pro.sky.telegrambot.model;
 
 
 import javax.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -10,7 +9,7 @@ import java.util.Objects;
 @Table(name = "notification_task")
 public class NotificationTask {
 
-    @id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -34,7 +33,12 @@ public class NotificationTask {
         this.status = status;
     }
 
-        public Long getId() {
+    public NotificationTask() {
+
+    }
+
+
+    public Long getId() {
             return id;
         }
 

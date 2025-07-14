@@ -32,7 +32,7 @@ public class NotificationScheduler {
         List<NotificationTask> tasksToSend = notificationTaskRepository.findBySendTime(currentMinute);
 
         for (NotificationTask task : tasksToSend){
-            notificationSender.sendNotification(task.getChatId(), task.getNotificationText());
+            notificationSender.notificationSender(task.getChatId(), task.getNotificationText());
         }
 
         }

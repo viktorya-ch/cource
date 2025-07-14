@@ -2,24 +2,30 @@ package pro.sky.telegrambot.sender;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.SendMessage;
-import com.pengrad.telegrambot.response.SendResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 
+
+@Component
 public class NotificationSender {
 
-    private final TelegramBot bot;
+    private final TelegramBot telegramBot;
 
-    public NotificationSender(TelegramBot bot){
-        this.bot = bot;
+    @Autowired
+    public NotificationSender(TelegramBot telegramBot){
+        this.telegramBot = telegramBot;
     }
 
-    public void sendNotification(Long chatId,String messageText){
+
+
+    public void notificationSender (Long chatId,String messageText){
         SendMessage message = new SendMessage(chatId,messageText);
-        SendResponse response = bot.execute(message);
-        if (response.isOk()){
-            System.out.println(" Уведомление отправлено в чат : " + chatId);
-        }else {
-            System.err.println(" Ошибка при отправке уведомления: " + response.errorCode() + " - " + response.description());
+        try {
+            telegramBot.execute(message);
+        }catch (Exception e){
+            e.printStackTrace();
         }
+
     }
 }

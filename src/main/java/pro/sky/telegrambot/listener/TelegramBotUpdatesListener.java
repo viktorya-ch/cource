@@ -1,22 +1,22 @@
 package pro.sky.telegrambot.listener;
 
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
-import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.model.Update;
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+
+import com.pengrad.telegrambot.TelegramBot;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pro.sky.telegrambot.sender.NotificationSender;
 
 
 import javax.annotation.PostConstruct;
 import java.util.List;
 
-import static org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute;
+
 
 @Service
 public class TelegramBotUpdatesListener implements UpdatesListener {
@@ -24,9 +24,16 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     private Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
 
 
+    private final NotificationSender notificationSender;
+
+    @Autowired
+    public TelegramBotUpdatesListener(NotificationSender notificationSender){
+        this.notificationSender = notificationSender;
+    }
     private TelegramLongPollingBot bot;
 
-    public TelegramBotUpdatesListener(TelegramLongPollingBot bot){
+    public TelegramBotUpdatesListener(NotificationSender notificationSender, TelegramLongPollingBot bot){
+        this.notificationSender = notificationSender;
         this.bot = bot;
     }
 
@@ -42,19 +49,13 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     @Override
     public int process(List<Update> updates) {
         for (Update update : updates) {
-            if (update.hasMessage() && update.getMessage().hasText()){
-                String messageText = update.getMessage().getText();
+            if (update.message()!=null && update.message().text()!=null){
+                String messageText = update.message().text();
                 if ("/start".equals(messageText)){
-                    long chatId = update.getMessage().getChatId();
+                    long chatId = update.message().chat().id();
                     String welcomeMessage = " Привет! Рад видеть тебя тут. Как я могу помочь? ";
-                    SendMessage message = new SendMessage().setChatId(chatId).setText(welcomeMessage);
 
-                    try {
-                        bot.execute(message);
-                    }catch (TelegramApiException e){
-                        e.printStackTrace();
-                    }
-
+                    notificationSender.notificationSender(chatId,welcomeMessage);
 
                 }
             }
@@ -63,8 +64,4 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     }
 
 
-    @Override
-    public int process(List<com.pengrad.telegrambot.model.Update> list) {
-        return 0;
-    }
 }
