@@ -26,17 +26,28 @@ public class NotificationTask {
     @Column(name = "status", nullable = false, length = 50)
     private String status;
 
-    public NotificationTask (Long chatId, String notificationText, LocalDateTime sendTime, String status) {
-        this.chatId = chatId;
-        this.notificationText = notificationText;
-        this.sendTime = sendTime;
-        this.status = status;
-    }
+    private boolean sent;
 
     public NotificationTask() {
 
     }
 
+    public NotificationTask(String notificationText, LocalDateTime sendTime, long chatId) {
+        this.chatId = chatId;
+        this.notificationText = notificationText;
+        this.sendTime = sendTime;
+        this.sent = false;
+    }
+
+
+
+    public boolean isSent() {
+        return sent;
+    }
+
+    public void setSent(boolean sent) {
+        this.sent = sent;
+    }
 
     public Long getId() {
             return id;

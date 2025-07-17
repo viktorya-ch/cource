@@ -16,4 +16,6 @@ public interface NotificationTaskRepository extends JpaRepository<NotificationTa
     List<NotificationTask> findByChatId(Long chatId);
 
     List<NotificationTask> findBySendTime(LocalDateTime sendTime);
+
+    List<NotificationTask> findAllBySendTimeBeforeAndSentFalse(LocalDateTime now);
 }

@@ -24,7 +24,7 @@ import java.util.Map;
 @EnableScheduling
 public class NotificationScheduler {
     private final NotificationTaskRepository notificationTaskRepository;
-    private static  NotificationSender notificationSender;
+    public static  NotificationSender notificationSender;
     private static ThreadPoolTaskScheduler taskScheduler;
 
     private final Map<Long,String>reminders = new HashMap<>();
@@ -73,5 +73,17 @@ public class NotificationScheduler {
     private static void  sendReminder(long chatId, String reminderText){
         notificationSender.notificationSender(chatId, " Напоминание: " + reminderText);
     }
+
+    @Scheduled
+    public void sendNotifications(long chatId, String welcomeMessage) {
+        LocalDateTime now = LocalDateTime.now();
+        List<NotificationTask> tasks = notificationTaskRepository.findAllBySendTimeBeforeAndSentFalse(now);
+        for (NotificationTask notificationTask: tasks){
+            notificationSender.notificationSender(notificationTask.getChatId(), notificationTask.getNotificationText());
+            notificationTask.setSent(true);
+            notificationTaskRepository.save(notificationTask);
+        }
+
     }
+}
 
