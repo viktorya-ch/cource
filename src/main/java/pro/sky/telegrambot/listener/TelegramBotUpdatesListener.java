@@ -1,75 +1,91 @@
 package pro.sky.telegrambot.listener;
 
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
-import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.model.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import pro.sky.telegrambot.model.NotificationTask;
+import pro.sky.telegrambot.scheduler.NotificationScheduler;
+import pro.sky.telegrambot.sender.NotificationSender;
+import pro.sky.telegrambot.service.NotificationService;
 
 
-import javax.annotation.PostConstruct;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute;
 
 @Service
-public class TelegramBotUpdatesListener extends TelegramLongPollingBot {
+public class TelegramBotUpdatesListener implements UpdatesListener {
 
     private Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
 
+
+    private final NotificationSender notificationSender;
+    private final NotificationScheduler notificationScheduler;
+    private final NotificationService notificationService;
+
+
     @Autowired
-    private TelegramBot telegramBot;
-
-    @Override
-    public String getBotUsername() {
-        return "KeithDS_bot";
+    public TelegramBotUpdatesListener(NotificationSender notificationSender, NotificationScheduler notificationScheduler, NotificationService notificationService) {
+        this.notificationSender = notificationSender;
+        this.notificationScheduler = notificationScheduler;
+        this.notificationService = notificationService;
     }
-
-    @Override
-    public String getBotToken() {
-        return "7777386011:AAFWAxwN4EyLTbu6hAeZoQeGDJWo5XgKaEY";
-    }
-
-    @PostConstruct
-    public void init() {
-        telegramBot.setUpdatesListener((UpdatesListener) this);
-    }
-
-    public void execute (SendMessage message) throws TelegramApiException {
-        super.execute(message);
-    }
-
 
     @Override
     public int process(List<Update> updates) {
         for (Update update : updates) {
-            if (update.hasMessage() && update.getMessage().hasText()){
-                String messageText = update.getMessage().getText();
-                if (messageText.equals("/start")){
-                    long chatId = update.getMessage().getChatId();
-                    String welcomeMessage = " Привет! Рад видеть тебя тут. Как я могу помочь? ";
-                    SendMessage message = new SendMessage(1, " Привет! Рад видеть тебя тут. Как я могу помочь? ");
-
-                    try {
-                        execute(message);
-                    }catch (TelegramApiException e){
-                        e.printStackTrace();
-                    }
-
-
+            if (update.message() != null && update.message().text() != null) {
+                String messageText = update.message().text();
+                long chatId = update.message().chat().id();
+                if ("/start".equals(messageText)) {
+                    String welcomeMessage = " Привет! Чтобы установить напоминание, отправьте сообщение вида: ДД.ММ.ГГГГ ЧЧ:ММ <Сделать домашнюю работу>";
+                    notificationScheduler.sendNotifications(chatId, welcomeMessage);
+                } else {
+                    processMessage(chatId, messageText);
                 }
             }
         }
-        return updates.size();
+        return UpdatesListener.CONFIRMED_UPDATES_ALL;
     }
 
-    @Override
-    public void onUpdateReceived(Update update) {
+    public void processMessage(long chatId, String message) {
 
+        String[] parts = message.split(" ", 2);
+
+        if (parts.length < 2) {
+            notificationSender.notificationSender(chatId, " Неверный формат. Используйте: ДД.ММ.ГГГГ ЧЧ:ММ <Сделать домашнюю работу>");
+            return;
+        }
+        String dateTimeText = parts[0] + " " + parts[1];
+        String notificationText = parts[1];
+        try {
+            LocalDateTime sendTime = parseDateTime(parts[0], parts[1]);
+
+            notificationService.scheduleNotification(chatId, " Напоминание установлено на " + sendTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")) + " с текстом " + notificationText);
+        } catch (DateTimeParseException e) {
+            notificationSender.notificationSender(chatId, " Неверный формат даты и времени. Используйте: ДД.ММ.ГГГГ ЧЧ:ММ <Сделать домашнюю работу> ");
+        }
+    }
+
+    private LocalDateTime parseDateTime(String dateText, String timeText) {
+        String combinedText = dateText + " " + timeText;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(" dd.MM.yyyy HH:mm");
+        return LocalDateTime.parse(combinedText, formatter);
     }
 }
+
+
+
+
+
+
+
+
+
